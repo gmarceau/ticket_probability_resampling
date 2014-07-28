@@ -18,7 +18,7 @@ object Main extends App {
     Ticket(r("sprint").toInt, r("completed").toBoolean, r("ticket").toInt, r("hours").toDouble, r("scope").toDouble)
 
 
-  val tickets = CSVReader.open(new File("c:/downloads/Hours log for bks_on_rails.csv"))
+  val tickets = CSVReader.open(new File("data/log.csv"))
                          .allWithHeaders()
                          .map(parseRow)
                          .filter(t => t.hours > 0 && t.completed)
@@ -46,17 +46,12 @@ object Main extends App {
 
   def randomSprints(nSprints: Int, nPoints: Int): List[Sprint] = List.fill(nSprints) { randomSprint(nPoints) }
 
-  def successRate(sprints: List[Sprint])(p: Sprint => Boolean): Double = {
-    val r = sprints.count(p).toDouble / sprints.size
-    println(r*100 + "%")
-    println(sprints.map(_.points).toJson)
-    r
-  }
+  def successRate(sprints: List[Sprint])(p: Sprint => Boolean): Double = sprints.count(p).toDouble / sprints.size
 
-  val sampleRate = 1000
+  val nSamples = 10000
 
   def findPointCutoff(desiredSuccessRate: Double, desiredHours: Double): (Int, List[Sprint]) = {
-    val samples = for (nPoints <- Stream.from(1)) yield (nPoints, randomSprints(sampleRate, nPoints))
+    val samples = for (nPoints <- Stream.from(1)) yield (nPoints, randomSprints(nSamples, nPoints))
 
     def isSuccessful(sprint: Sprint): Boolean = sprint.hours < desiredHours
 
@@ -74,8 +69,9 @@ object Main extends App {
     saveas(output.toString)
   }
 
-  val (nPoints, sample) = findPointCutoff(0.95, 40)
-  println("Points cutoff: " + nPoints)
+  val desiredSuccessRate = 0.95
+  val desiredHours = 45
+  val (nPoints, sample) = findPointCutoff(desiredSuccessRate, desiredHours)
+  println("Points cutoff for " + (desiredSuccessRate*100).toInt + "% success rate at " + desiredHours + " hours : " + nPoints + " points")
   histogramOfHours(sample, new File("histogram.png"))
-
 }
