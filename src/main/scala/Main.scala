@@ -3,9 +3,11 @@ import java.io.File
 import com.github.tototoshi.csv.CSVReader
 import cc.spray.json._
 import DefaultJsonProtocol._
+import scalala.generic.collection.CanViewAsTensor1
 import scalala.library.Plotting._
 import scalala.library.plotting.StaticHistogramBins
-import scalala.tensor.dense.DenseVector
+import scalala.tensor.dense.{DenseVectorCol, DenseVector}
+import java.awt.Color
 
 object Main extends App {
 
@@ -68,10 +70,29 @@ object Main extends App {
     ylabel("%% (per milli)")
     saveas(output.toString)
   }
+  {
+    figure(1)
+    scatter[Int, DenseVectorCol[Int], Int, DenseVectorCol[Double], Double, DenseVectorCol[Double], Double, DenseVectorCol[Int], Int](
+      DenseVector((0 until tickets.size):_*), DenseVector(tickets.map(_.hoursPerPt): _*),
+      DenseVector.ones[Double](tickets.size)*0.5, DenseVector.ones[Int](tickets.size)*100)
 
+    title("hours per point")
+    xlabel("ticket number")
+    ylabel("hours")
+    saveas("hours per point.png")
+  }
+  {
+    figure(2)
+    hist(DenseVector(tickets.map(_.hoursPerPt):_*), StaticHistogramBins((0d until(13, 0.5)).toArray))
+    title("distribution of hr/pts")
+    xlabel("hr/pts")
+    ylabel("counts")
+    saveas("distribution of hr per pts.png")
+  }
   val desiredSuccessRate = 0.95
   val desiredHours = 45
   val (nPoints, sample) = findPointCutoff(desiredSuccessRate, desiredHours)
   println("Points cutoff for " + (desiredSuccessRate*100).toInt + "% success rate at " + desiredHours + " hours : " + nPoints + " points")
+  figure(3)
   histogramOfHours(sample, new File("histogram.png"))
 }
